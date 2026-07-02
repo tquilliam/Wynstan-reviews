@@ -172,7 +172,20 @@ const monthKey = (d) => { const m = String(d || '').match(/(\d{4})-(\d{2})/); if
 const dateVal = (d) => { const t = new Date(d).getTime(); return isNaN(t) ? 0 : t; };
 const stars = (r) => '★★★★★☆☆☆☆☆'.slice(5 - Math.round(num(r)), 10 - Math.round(num(r)));
 const splitNames = (s) => String(s == null ? '' : s).split(',').map((x) => x.trim()).filter(Boolean);
-const staffUnion = (r) => [...new Set([...splitNames(r['Staff Mentioned']), ...splitNames(r['Staff (manual)'])])];
+// Words in the manual box that mean "nobody — clear the auto guess".
+const NONE_TAGS = new Set(['none', 'no one', 'noone', 'nobody', 'n/a', 'na', '-', 'x']);
+// The manual box OVERRIDES the auto "Staff Mentioned" guess for a review:
+//   blank  -> keep the auto match
+//   name(s)-> replace the auto match (list everyone for this row, comma-separated)
+//   "none" -> clear it (auto was a false match; nobody is credited)
+const staffUnion = (r) => {
+  const man = splitNames(r['Staff (manual)']);
+  if (man.length) {
+    if (man.length === 1 && NONE_TAGS.has(man[0].toLowerCase())) return [];
+    return [...new Set(man)];
+  }
+  return [...new Set(splitNames(r['Staff Mentioned']))];
+};
 
 // Wynstan fitters/installers (fallback classifier; the Staff CSV overrides this when published)
 const INSTALLERS = new Set(['Chris Sun','John McKenna','Alexander Dinallo','Bill Barake','Simon Millard','Ryan Orley','Ronald Alosio','Adam Ivicak','Daniel Dimitriou','Nicholas Bond','Bobby Parker','Bruce Li','Paul Yankoff','Juan Humphreys','Karl Fritsch','Jay Kemp','Mahir Celikovic','Michael Johnson',"Michael D'Sylva",'Luke Medhurst','Michael Johannsen','Jayanath Wijayaweera','Mal Silva','Mansoor Haq','George Plionis','Joshua Agha','Piri Keenan','Andrew Molodstov','David Eddy','Darko Maracic','Arthur Chen','Ayden Richards','Brenton Barbeau','Song Lin','John Zhong','Chetan Prasad','Delfino Lanati','Mazen El Moussa','Garrath Burke-Weigt','Hakan Mehmet','Nader Nashabe','Mark Hogan','Chris Bridekirk','Kelvin Chan','Jay He','Kris McClelland','Brett Knight','Peter Hsu','Mick Issa','Aleksander Stojanovski','Nathan Osborne','Tom Vezos','Ronald Chand','Theo Stavrianos','Sam Khan','Mario Weitzel','Thomas Yorke','Billal El-Sayed','Steven Scuglia','Ali Hijazi','Taylor Sanderson','Thomas Hennessy','Mohammed Shamim','Richard Daher']);
